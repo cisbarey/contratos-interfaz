@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CreatedResponse {
 
-    private String id;
+    private Long id;
+    private boolean success;
 }
