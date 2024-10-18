@@ -3,6 +3,11 @@ CREATE SEQUENCE SEQ_EMPLOYEES
     START WITH 1 -- Comienza desde 1
     INCREMENT BY 1 -- Incrementa de 1 en 1
     NOCACHE; -- No usa caché
+-- Crear la secuencia SEQ_EMPLOYEE_WORKED_HOURS
+CREATE SEQUENCE SEQ_EMPLOYEE_WORKED_HOURS
+    START WITH 1 -- Comienza desde 1
+    INCREMENT BY 1 -- Incrementa de 1 en 1
+    NOCACHE; -- No usa caché
 
 -- Crear la tabla GENDERS
 CREATE TABLE genders (
@@ -38,6 +43,15 @@ BEGIN
 END;
 /
 
+-- Crear el trigger para usar la secuencia en la tabla EMPLOYEE_WORKED_HOURS
+CREATE OR REPLACE TRIGGER trg_employee_worked_hours_id
+BEFORE INSERT ON employee_worked_hours
+FOR EACH ROW
+BEGIN
+    :NEW.id := SEQ_EMPLOYEE_WORKED_HOURS.NEXTVAL; -- Asigna el siguiente valor de la secuencia
+END;
+/
+
 -- Crear la tabla EMPLOYEE_WORKED_HOURS
 CREATE TABLE employee_worked_hours (
     id NUMBER(10, 0) PRIMARY KEY,
@@ -49,6 +63,7 @@ CREATE TABLE employee_worked_hours (
 
 -- Crear el paquete EMPLOYEE_PKG
 CREATE OR REPLACE PACKAGE EMPLOYEE_PKG AS
+	-- ################################################ Función 1 ######################################################
     FUNCTION FN_01_EMPLOYEE(
         p_name      IN VARCHAR2,
         p_last_name IN VARCHAR2,
@@ -56,6 +71,13 @@ CREATE OR REPLACE PACKAGE EMPLOYEE_PKG AS
         p_gender_id IN NUMBER,
         p_job_id    IN NUMBER
     ) RETURN NUMBER; -- Devuelve el ID del empleado insertado
+	
+	-- ################################################ Función 2 ######################################################
+	FUNCTION FN_02_EMPLOYEE(
+        p_employee_id  IN NUMBER,
+        p_worked_hours IN NUMBER,
+        p_worked_date  IN DATE
+    ) RETURN NUMBER;
 END EMPLOYEE_PKG;
 /
 
@@ -63,6 +85,7 @@ END EMPLOYEE_PKG;
 -- Crear el cuerpo del paquete EMPLOYEE_PKG
 CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
 
+	-- ################################################ Función 1 ######################################################
     FUNCTION FN_01_EMPLOYEE(
         p_name      IN VARCHAR2,
         p_last_name IN VARCHAR2,
@@ -115,9 +138,60 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
 
         RETURN v_employee_id; -- Devuelve el ID del nuevo empleado
     END FN_01_EMPLOYEE;
+	
+	-- ################################################ Función 2 ######################################################
+	FUNCTION FN_02_EMPLOYEE(
+        p_employee_id  IN NUMBER,
+        p_worked_hours IN NUMBER,
+        p_worked_date  IN DATE
+    ) RETURN NUMBER IS
+        v_worked_hours_id NUMBER;
+        v_employee_exists NUMBER;
+        v_total_hours NUMBER;
+    BEGIN
+        -- Validar si el empleado existe
+        SELECT COUNT(1)
+        INTO v_employee_exists
+        FROM employees
+        WHERE id = p_employee_id;
+
+        IF v_employee_exists = 0 THEN
+            RAISE_APPLICATION_ERROR(-20004, 'El empleado no existe');
+        END IF;
+
+        -- Validar que las horas trabajadas no excedan 20 horas por día
+        IF p_worked_hours > 20 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'Las horas trabajadas no pueden exceder 20 horas por día');
+        END IF;
+
+        -- Validar que la fecha de trabajo no sea mayor a la fecha actual
+        IF p_worked_date > SYSDATE THEN
+            RAISE_APPLICATION_ERROR(-20006, 'La fecha de trabajo no puede ser mayor a la fecha actual');
+        END IF;
+
+        -- Validar que no haya un registro duplicado para el mismo empleado en la misma fecha
+        SELECT COUNT(1)
+        INTO v_total_hours
+        FROM employee_worked_hours
+        WHERE employee_id = p_employee_id
+        AND worked_date = p_worked_date;
+
+        IF v_total_hours > 0 THEN
+            RAISE_APPLICATION_ERROR(-20007, 'Ya existe un registro de horas trabajadas para este empleado en esta fecha');
+        END IF;
+
+        -- Insertar las horas trabajadas en la tabla employee_worked_hours
+        INSERT INTO employee_worked_hours (employee_id, worked_hours, worked_date)
+        VALUES (p_employee_id, p_worked_hours, p_worked_date)
+        RETURNING id INTO v_worked_hours_id;
+
+        -- Retornar el ID del registro insertado
+        RETURN v_worked_hours_id;
+    END FN_02_EMPLOYEE;
 
 END EMPLOYEE_PKG;
 /
+
 
 
 -- Inserts para la tabla GENDERS
