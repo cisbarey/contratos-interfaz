@@ -61,6 +61,16 @@ CREATE TABLE employee_worked_hours (
     FOREIGN KEY (employee_id) REFERENCES employees(id)
 );
 
+
+-- Inserts para la tabla GENDERS
+INSERT INTO genders (id, name) VALUES (1, 'Masculino');
+INSERT INTO genders (id, name) VALUES (2, 'Femenino');
+
+-- Inserts para la tabla JOBS
+INSERT INTO jobs (id, name, salary) VALUES (1, 'Developer', 70000);
+INSERT INTO jobs (id, name, salary) VALUES (2, 'Project Manager', 90000);
+INSERT INTO jobs (id, name, salary) VALUES (3, 'Business Analyst', 80000);
+
 -- Crear el paquete EMPLOYEE_PKG
 CREATE OR REPLACE PACKAGE EMPLOYEE_PKG AS
 	-- ################################################ Función 1 ######################################################
@@ -82,8 +92,7 @@ END EMPLOYEE_PKG;
 /
 
 
--- Crear el cuerpo del paquete EMPLOYEE_PKG
-CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
+create or replace NONEDITIONABLE PACKAGE BODY EMPLOYEE_PKG AS
 
 	-- ################################################ Función 1 ######################################################
     FUNCTION FN_01_EMPLOYEE(
@@ -99,8 +108,8 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
     BEGIN
         -- Validar que el nombre y apellido no existan
         SELECT COUNT(*) INTO v_count
-        FROM employees e
-        WHERE e.name = p_name AND e.last_name = p_last_name;
+        FROM employees emp
+        WHERE emp.name = p_name AND emp.last_name = p_last_name;
 
         IF v_count > 0 THEN
             RAISE_APPLICATION_ERROR(-20001, 'El empleado ya existe.');
@@ -108,8 +117,8 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
 
         -- Validar que el género exista
         SELECT COUNT(*) INTO v_count
-        FROM genders g
-        WHERE g.id = p_gender_id;
+        FROM genders gen
+        WHERE gen.id = p_gender_id;
 
         IF v_count = 0 THEN
             RAISE_APPLICATION_ERROR(-20002, 'El género no existe.');
@@ -117,8 +126,8 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
 
         -- Validar que el puesto exista
         SELECT COUNT(*) INTO v_count
-        FROM jobs j
-        WHERE j.id = p_job_id;
+        FROM jobs job
+        WHERE job.id = p_job_id;
 
         IF v_count = 0 THEN
             RAISE_APPLICATION_ERROR(-20003, 'El puesto no existe.');
@@ -138,7 +147,7 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
 
         RETURN v_employee_id; -- Devuelve el ID del nuevo empleado
     END FN_01_EMPLOYEE;
-	
+
 	-- ################################################ Función 2 ######################################################
 	FUNCTION FN_02_EMPLOYEE(
         p_employee_id  IN NUMBER,
@@ -152,8 +161,8 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
         -- Validar si el empleado existe
         SELECT COUNT(1)
         INTO v_employee_exists
-        FROM employees
-        WHERE id = p_employee_id;
+        FROM employees emp
+        WHERE emp.id = p_employee_id;
 
         IF v_employee_exists = 0 THEN
             RAISE_APPLICATION_ERROR(-20004, 'El empleado no existe');
@@ -172,9 +181,9 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
         -- Validar que no haya un registro duplicado para el mismo empleado en la misma fecha
         SELECT COUNT(1)
         INTO v_total_hours
-        FROM employee_worked_hours
-        WHERE employee_id = p_employee_id
-        AND worked_date = p_worked_date;
+        FROM employee_worked_hours ewh
+        WHERE ewh.employee_id = p_employee_id
+        AND ewh.worked_date = p_worked_date;
 
         IF v_total_hours > 0 THEN
             RAISE_APPLICATION_ERROR(-20007, 'Ya existe un registro de horas trabajadas para este empleado en esta fecha');
@@ -190,15 +199,3 @@ CREATE OR REPLACE PACKAGE BODY EMPLOYEE_PKG AS
     END FN_02_EMPLOYEE;
 
 END EMPLOYEE_PKG;
-/
-
-
-
--- Inserts para la tabla GENDERS
-INSERT INTO genders (id, name) VALUES (1, 'Masculino');
-INSERT INTO genders (id, name) VALUES (2, 'Femenino');
-
--- Inserts para la tabla JOBS
-INSERT INTO jobs (id, name, salary) VALUES (1, 'Developer', 70000);
-INSERT INTO jobs (id, name, salary) VALUES (2, 'Project Manager', 90000);
-INSERT INTO jobs (id, name, salary) VALUES (3, 'Business Analyst', 80000);
