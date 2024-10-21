@@ -1,12 +1,11 @@
 package com.examen.request;
 
-import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record EmployeeRequest(
-        Long genderId,
-        Long jobId,
-        String name,
-        String lastName,
-        String birthdate
-) {
-}
+        @JsonProperty("gender_id") Long genderId,
+        @JsonProperty("job_id") Long jobId,
+        @JsonProperty("name") String name,
+        @JsonProperty("last_name") String lastName,
+        @JsonProperty("birthdate") String birthdate
+) {}

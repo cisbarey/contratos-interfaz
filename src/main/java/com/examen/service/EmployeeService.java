@@ -2,6 +2,7 @@ package com.examen.service;
 
 import com.examen.repository.EmployeeRepository;
 import com.examen.request.EmployeeRequest;
+import com.examen.request.EmployeeWorkedHourRequest;
 import com.examen.util.DateUtil;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,15 @@ public class EmployeeService {
                 birthdate,
                 request.genderId(),
                 request.jobId()
+        );
+    }
+
+    public Long createEmployeeWorkedHour(EmployeeWorkedHourRequest request) {
+        Date workedDate = DateUtil.validateAndConvertDate(request.workedDate());
+        return this.repository.insertEmployeeWorkedHour(
+                request.employeeId(),
+                request.workedHours(),
+                workedDate
         );
     }
 }

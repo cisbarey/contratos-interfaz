@@ -1,6 +1,7 @@
 package com.examen.controller;
 
 import com.examen.request.EmployeeRequest;
+import com.examen.request.EmployeeWorkedHourRequest;
 import com.examen.response.CreatedResponse;
 import com.examen.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,5 +27,14 @@ public class EmployeeController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(CreatedResponse.builder().id(employeeId).success(Boolean.TRUE).build());
+    }
+
+    @PostMapping("/worked-hour")
+    public ResponseEntity<CreatedResponse> createEmployeeWorkedHour(@RequestBody EmployeeWorkedHourRequest request) {
+        log.info("Entró al método createEmployeeWorkedHour {}", request);
+        Long recordId = this.service.createEmployeeWorkedHour(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(CreatedResponse.builder().id(recordId).success(Boolean.TRUE).build());
     }
 }
